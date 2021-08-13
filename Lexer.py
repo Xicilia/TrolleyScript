@@ -1,4 +1,24 @@
 import re
+from Error import SyntError
+
+tokens = {
+    'equals': r'^будет',
+    'comment':r'//.*',
+    'var':r'\$\w+',
+    'integer':r'^\d+',
+    'ifOperation':r'^это',
+    'string':r'\'.+\'',
+    'ifCondition':r'^если',
+    'printFunction':r'^базарить',
+    'funcDeclare':r'^мутка',
+    'argBlockStart':r'^номерочки',
+    'stateBlockStart':r'^епт',
+    'booleanTrue':r'^Пиздато',
+    'booleanFalse':r'^Хуево',
+    'lineEnd':'\n',
+    'space':r' *'
+
+}
 
 class Lexer:
 
@@ -17,46 +37,53 @@ class Lexer:
             self._createDict()
 
     def _createDict(self):
-        
+
         for line in self.source_lines:
-            self.sourceDict.append(self._splitLine(line))
 
-    def _splitLine(self,line):
+            self.sourceDict.append(self._tokenize(line))
+
+    def _tokenize(self,line):
         #will be split string to a list of tokens
-        splittedString = []
 
-        res = re.search('//',line)
-        if res:
-            splittedString.append(['comment',res])
-            line = line.replace(line[res.start():len(line)],'')
+        splittedLine = line.split(' ') # list of all words
+        errorGettingLine = line #line which will be get any syntax error
+        resultList = [] #will contain information about every word in program as token: [key:value]
 
-        res = re.search(r'\$\w+',line)
-        if res:
-            splittedString.append(['var',res])
-            line = line.replace(res.group(0),'')
+        for element in splittedLine:
 
-        res = re.search('запомни как',line) 
-        if res:
-            splittedString.append(['operation',res])
-            line = line.replace(res.group(0),'')
+            for key in tokens:
 
-        res = re.search(r'\d+',line)
-        if res:
-            splittedString.append(['value',res])
-            line = line.replace(res.group(0),'')
+                res = re.search(tokens[key],element)
 
-        splittedString.sort(key=lambda val: val[1].start())
+                if res:
+                    value = res.group(0)
 
-        for string in splittedString:
-            string[1] = string[1].group(0)
+                    resultList.append([key,value])
 
-        print(splittedString)
+                    if key == 'comment':
+                        #delete all comments from error getting line
 
+                        start = splittedLine.index(value)
+                        commentSection = splittedLine[start:len(splittedLine)]
 
-        
+                        errorGettingLine = errorGettingLine.replace(value,'')
 
-    def _setContext(self,line):
-        #get current line then use this as arg to func
-        return self.source_lines[self.source_lines.index(line)]
+                        for commentStuff in commentSection:
+                            errorGettingLine = errorGettingLine.replace(commentStuff,'')
+
+                        continue
+
+                    errorGettingLine = errorGettingLine.replace(value,'')
+                    
+        errorGettingLine = errorGettingLine.replace(' ','')
+
+        if errorGettingLine:
+            
+            SyntError.setTarget(str(self.source_lines.index(line)))
+            SyntError.ShowError()
+
+        print(resultList)
+        return resultList
 
 Lexer('test.txt')
+input()
