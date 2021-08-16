@@ -3,7 +3,6 @@ import sys
 
 from re import A
 
-
 class Error:
 
     def __init__(self,ErrorName,Code,ErrorText):
